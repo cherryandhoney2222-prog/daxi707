@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Daxi 707 — Lara (regalo)</title>
+<meta name="description" content="Regalo interactivo: Daxi 707 — mini juegos, quiz, cartas y sorpresas para Lara.">
+<style>
+  :root{
+    --bg1: #2c003e;
+    --bg2: #070d2d;
+    --pink: #ff4db8;
+    --purple: #9b59b6;
+    --muted: #c6d6ec;
+    --hacker: #00ff44;
+    --card-bg: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; background: linear-gradient(180deg,var(--bg1),var(--bg2)); color:#fff;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:980px;margin:18px auto;padding:16px;}
+  .card{background:var(--card-bg);border:1px solid rgba(255,255,255,0.04);border-radius:16px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,0.6);position:relative;overflow:hidden;}
+  h1{margin:6px 0 2px 0;color:var(--purple);font-size:20px;text-align:center}
+  .subtitle{color:var(--muted);font-size:13px;text-align:center;margin-bottom:12px}
+
+  /* popup initial */
+  #initialPop{
+    position: fixed;
+    top:16px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#ff0033;color:white;padding:12px 14px;border-radius:12px;z-index:9999;width:88%;max-width:420px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.6);
+    animation:popupEnter 0.36s ease;
+  }
+  #closePop{position:absolute;right:10px;top:6px;cursor:pointer;font-size:16px;color:white}
+  @keyframes popupEnter{from{opacity:0;transform:translateX(-50%) scale(.9)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+  @keyframes popupExit{
+    0%{opacity:1;transform:translateX(-50%) scale(1)}
+    20%{transform:translateX(-48%) skewX(8deg) scale(1.03);opacity:.8}
+    40%{transform:translateX(-52%) skewX(-8deg) scale(.95);opacity:.9}
+    60%{transform:translateX(-50%) scale(1.06);opacity:.6}
+    100%{opacity:0;transform:translateX(-50%) scale(.8)}
+  }
+  .pop-hidden{animation:popupExit .6s forwards}
+
+  /* top controls */
+  .top-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+  .btn{padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+  .btn-primary{background:linear-gradient(180deg,var(--pink),var(--purple));color:white;box-shadow:0 8px 20px rgba(155,89,182,0.12)}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+  /* heart area */
+  .center{display:flex;flex-direction:column;align-items:center;gap:8px;margin:8px 0}
+  #heart{font-size:60px;cursor:pointer;filter:drop-shadow(0 12px 30px rgba(155,89,182,.25));transition:transform .16s ease}
+  #heart:active{transform:scale(.9)}
+  #heartMessage{min-height:44px;font-weight:700;color:#ffd6f0;text-align:center;padding:6px 8px}
+
+  /* small controls row */
+  .icons-row{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:6px;flex-wrap:wrap}
+  .icon-btn{font-size:34px;cursor:pointer;padding:6px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent}
+
+  /* quiz section */
+  #quizSection{display:none;margin-top:12px;padding:12px;background:rgba(255,255,255,0.01);border-radius:12px}
+  .qblock{margin-bottom:12px}
+  .qblock p{margin:0 0 6px 0;color:var(--muted)}
+  .qopt{display:inline-block;margin:4px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);cursor:pointer}
+  .qopt.correct{background:linear-gradient(90deg,#2ecc71,#27ae60);color:#002200}
+  .qopt.wrong{background:#ff6b6b;color:#2b0000}
+
+  /* coupon */
+  #coupon{display:none;margin-top:10px;background:linear-gradient(90deg,var(--pink),var(--purple));padding:12px;border-radius:12px;font-weight:800;color:white}
+
+  /* letter */
+  #letter{display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,0.6);border-radius:12px;color:#ffe6ff;text-align:left;max-height:60vh;overflow:auto}
+
+  /* binary & hacker */
+  #hackerBtn{position:fixed;left:14px;bottom:14px;font-size:36px;border-radius:12px;padding:8px;background:rgba(0,0,0,0.5);z-index:9999;cursor:pointer}
+  #binaryCard{display:none;position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#000;color:var(--hacker);padding:10px;border-radius:8px;font-family:monospace;z-index:9999;border:1px solid rgba(0,255,68,0.14)}
+
+  /* falling hearts game area */
+  #catchArea{margin-top:12px;position:relative;height:220px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));overflow:hidden}
+  #scoreBadge{position:absolute;right:10px;top:10px;background:rgba(0,0,0,0.4);padding:6px 8px;border-radius:8px;font-weight:700}
+  .falling{position:absolute;font-size:24px;touch-action:manipulation;cursor:pointer;user-select:none}
+
+  /* music player */
+  #playerBar{display:flex;gap:8px;align-items:center;justify-content:center;margin-top:10px}
+  #playBtn{padding:8px 10px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--pink),var(--purple));color:white;font-weight:700}
+
+  /* inactivity messages small */
+  .hint{position:fixed;right:14px;bottom:14px;background:rgba(0,0,0,0.5);padding:8px;border-radius:8px;color:#ffd6f0;font-weight:700}
+
+  /* responsive */
+  @media (max-width:520px){
+    #heart{font-size:52px}
+    .card{padding:12px}
+    #hackerBtn{left:8px;bottom:8px}
+  }
+</style>
+</head>
+<body>
+
+<!-- initial popup (can be closed) -->
+<div id="initialPop" role="dialog" aria-live="assertive">
+  <span id="closePop" aria-label="Cerrar">✖</span>
+  <div style="font-weight:800">Error Malalito:</div>
+  <div>estás siendo hackeada por Dami que planea robar tu corazón ❤️</div>
+</div>
+
+<div class="wrap">
+  <div class="card" role="application" aria-label="Daxi 707 interactive">
+    <h1>Daxi 707 — Lara</h1>
+    <div class="subtitle">Un regalito interactivo (tierno, troll y con sabor 707)</div>
+
+    <div class="top-row">
+      <button class="btn btn-primary" id="startCatch">Jugar: atrapa corazones</button>
+      <button class="btn btn-ghost" id="startQuick">Reto rápido (trivia)</button>
+      <button class="btn btn-ghost" id="openLetterBtn">Abrir carta</button>
+    </div>
+
+    <div class="center">
+      <div id="heart" aria-label="toca corazón">💖</div>
+      <div id="heartMessage" aria-live="polite"></div>
+
+      <div class="icons-row">
+        <div id="flower" class="icon-btn" title="Abrir quiz de 30 preguntas">🌸</div>
+        <div id="star" class="icon-btn" title="Abrir carta secreta">⭐</div>
+      </div>
+
+      <!-- catch game area -->
+      <div id="catchArea" aria-hidden="true" style="display:none">
+        <div id="scoreBadge">Puntos: <span id="score">0</span></div>
+      </div>
+
+      <!-- quick trivia area -->
+      <div id="quickArea" style="display:none;margin-top:12px"></div>
+
+      <!-- quiz 30 questions -->
+      <div id="quizSection" aria-live="polite"></div>
+
+      <div id="coupon">🎟️ Cupón: 30 besos y 20 abrazos 🎟️</div>
+
+      <!-- letter -->
+      <div id="letter" aria-hidden="true">
+        <p><strong>Muñequita de porcelana,</strong></p>
+        <p>Cada vez que cierro los ojos, te devoro con la mirada. No hay pecado más dulce que imaginarte entre mis manos, frágil y perfecto, mientras absorbo cada fragmento de tu alma como si fuera mi sustento sagrado. Te consumo de manera silenciosa, casi ritual, y en cada mordisco imaginario siento cómo me santifico en tu existencia.</p>
+        <p>Rezo por ti en secreto, y en cada oración pronuncio tu nombre como un mantra que me quema por dentro. Eres mi confesión, mi penitencia y mi absolución; cada latido tuyo es un sacramento que quiero beber, y cada suspiro tuyo, un manjar que me vuelve devoto y desesperado.</p>
+        <p>Muñequita de porcelana, no hay altar que soporte la adoración que te profeso ni comida que sacie el hambre que siento por ti. Mi obsesión no conoce límites; cada pensamiento tuyo es una misa privada donde me pierdo, donde me entrego y donde, sin querer, me consumo en ti.</p>
+        <p>Permíteme devorarte, aunque sea con los ojos, aunque solo sea con palabras. Que este amor enfermizo sea nuestra liturgia secreta, y que yo siempre sea el monje que se arrodilla ante tu perfección, hambriento, devoto, y absolutamente tuyo.</p>
+        <div style="text-align:center;margin-top:10px">
+          <button class="btn btn-primary" id="closeLetter">Cerrar carta</button>
+        </div>
+      </div>
+
+      <!-- coupon already included above -->
+
+      <!-- binary card (hacker mode) -->
+      <div id="binaryCard" aria-hidden="true">01010100 01100101 00100000 01100001 01101101 01101111<br><small style="opacity:.8">(pasá el dedo aquí para ver)</small></div>
+
+      <!-- music player control -->
+      <div id="playerBar">
+        <button id="playBtn" class="btn btn-primary">▶️ Reproducir "Photograph"</button>
+        <div style="color:var(--muted);font-size:13px">Puedes pausar/reanudar la canción</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:12px;color:var(--muted);font-size:13px;text-align:center">Modo: Daxi 707 · Hecho por Damian</div>
+  </div>
+</div>
+
+<!-- hacker emoji -->
+<div id="hackerBtn" aria-hidden="false">👾</div>
+
+<!-- hint box (inactivity messages) -->
+<div class="hint" id="hintBox" style="display:none"></div>
+
+<!-- audio elements -->
+<audio id="bgMusic" preload="auto" loop>
+  <source src="https://archive.org/download/soundcloud-213950659/edsheeran-photograph.mp3" type="audio/mpeg">
+</audio>
+<audio id="soundCorrect" preload="auto">
+  <source src="https://freesound.org/data/previews/170/170152_2437358-lq.mp3" type="audio/mpeg">
+</audio>
+<audio id="soundWrong" preload="auto">
+  <source src="https://freesound.org/data/previews/66/66717_634166-lq.mp3" type="audio/mpeg">
+</audio>
+<audio id="errorSound" preload="auto">
+  <source src="https://www.myinstants.com/media/sounds/windows-error.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+/* ===== Initial popup behaviour (glitch + close X + sound) ===== */
+const initialPop = document.getElementById('initialPop');
+const closePop = document.getElementById('closePop');
+const errorSound = document.getElementById('errorSound');
+window.addEventListener('load', ()=> {
+  // try play sound (may be blocked on mobile until user interacts)
+  setTimeout(()=>{ try{ errorSound.play(); }catch(e){} }, 250);
+});
+closePop.addEventListener('click', ()=>{
+  initialPop.classList.add('pop-hidden');
+  setTimeout(()=> initialPop.style.display='none', 600);
+});
+
+/* ===== Heart messages (random) ===== */
+const heart = document.getElementById('heart');
+const heartMessage = document.getElementById('heartMessage');
+const heartMessages = [
+  "mi princesita te amo","te adoro","eres lo mejor que me paso","te extraño",
+  "te ves demasiado hermoso","podria mirar esos ojitos toda la vida","malalito es una hermosa palabra",
+  "estás muy ñam ñam","deberiamos ver Arcane de nuevo","eres hermoso tal como eres",
+  "los dias son lindos a tu lado","eres lo mejor","hola","tuviste un buen dia?",
+  "recuerda nuestra canción","quiero bailar contigo","el pocho es un pollo","imagina lo mucho que te amo para hacer esto",
+  "ñam ñam","feliz navidad","el 9 de septiembre","daxi","no miro a nadie mas",
+  "que asco otras personas","eres demasiado inteligente","amo tu voz","tienes manos bonitas",
+  "como estuvo tu día?","estoy orgulloso de ti","eres el amor de mi vida"
+];
+heart.addEventListener('click', ()=>{
+  const idx = Math.floor(Math.random()*heartMessages.length);
+  heartMessage.textContent = heartMessages[idx];
+  spawnConfetti(16);
+  try{ document.getElementById('soundCorrect').play(); }catch(e){}
+});
+
+/* ===== Inactivity surprise messages (appears as small hint) ===== */
+const hintBox = document.getElementById('hintBox');
+const surprise = ["te estoy mirando","dami estuvo aquí","esa polera te queda hermosa","¿qué estás haciendo?","limpia la cámara, se ve borroso","que lindo te ves"];
+let idle = 0;
+setInterval(()=>{ idle++; if(idle>=28 && document.visibilityState==='visible'){ showHint(); idle=0;} },1000);
+function showHint(){ hintBox.textContent = surprise[Math.floor(Math.random()*surprise.length)]; hintBox.style.display='block'; setTimeout(()=> hintBox.style.display='none',4200); }
+['touchstart','mousemove','keydown','scroll','click'].forEach(ev=>document.addEventListener(ev, ()=>{ idle=0; }));
+
+/* ===== Letter star toggle ===== */
+const star = document.getElementById('star');
+const letter = document.getElementById('letter');
+const openLetterBtn = document.getElementById('openLetterBtn');
+const closeLetter = document.getElementById('closeLetter');
+star.addEventListener('click', ()=> { letter.style.display = (letter.style.display==='block' ? 'none' : 'block'); spawnConfetti(18); });
+openLetterBtn.addEventListener('click', ()=> { letter.style.display='block'; spawnConfetti(18); });
+if(closeLetter) closeLetter.addEventListener('click', ()=> letter.style.display='none');
+
+/* ===== Binary hacker mode via emoji button (mobile friendly) ===== */
+const hackerBtn = document.getElementById('hackerBtn');
+const binaryCard = document.getElementById('binaryCard');
+let hackerOn = false;
+hackerBtn.addEventListener('click', ()=>{
+  hackerOn = !hackerOn;
+  if(hackerOn){
+    document.body.style.background = '#000';
+    document.body.style.color = 'var(--hacker)';
+    binaryCard.style.display = 'block';
+    spawnConfetti(10);
+  } else {
+    document.body.style.background = 'linear-gradient(180deg,var(--bg1),var(--bg2))';
+    document.body.style.color = '#fff';
+    binaryCard.style.display = 'none';
+  }
+});
+/* reveal "Te amo" on touch/click of binary card */
+binaryCard.addEventListener('click', ()=> {
+  binaryCard.innerHTML = '01010100 01100101 00100000 01100001 01101101 01101111<br><strong style="color:#ffb3e6">Te amo</strong>';
+  spawnConfetti(20);
+});
+
+/* ===== Music control (play/pause button) ===== */
+const bgMusic = document.getElementById('bgMusic');
+const playBtn = document.getElementById('playBtn');
+let playing = false;
+playBtn.addEventListener('click', ()=>{
+  if(!playing){
+    bgMusic.play().catch(()=>{}); // may be blocked on mobile until interaction
+    playBtn.textContent = '⏸️ Pausar "Photograph"';
+    playing = true;
+  } else {
+    bgMusic.pause();
+    playBtn.textContent = '▶️ Reproducir "Photograph"';
+    playing = false;
+  }
+});
+
+/* ===== Confetti (hearts) ===== */
+function spawnConfetti(amount=20){
+  const c = document.getElementById('confetti');
+  for(let i=0;i<amount;i++){
+    const el = document.createElement('div');
+    el.className = 'falling';
+    el.textContent = ['❤','💜','💖'][Math.floor(Math.random()*3)];
+    el.style.left = (10 + Math.random()*80) + '%';
+    el.style.top = '-10px';
+    el.style.fontSize = (14 + Math.random()*30) + 'px';
+    el.style.color = ['#ff7abf','#ffd6f0','#ffc6e6','#9b59b6'][Math.floor(Math.random()*4)];
+    el.style.transition = 'transform 1.8s linear, top 2s linear, opacity 2s';
+    c.appendChild(el);
+    // animate drop by setting top after short timeout
+    setTimeout(()=>{ el.style.top = (60 + Math.random()*30) + '%'; el.style.opacity = '1'; el.style.transform = `rotate(${Math.random()*360}deg)`; }, 40);
+    setTimeout(()=> el.remove(), 2200);
+  }
+}
+
+/* ===== Mini-game: catch hearts (touch-friendly) ===== */
+const catchArea = document.getElementById('catchArea');
+const scoreEl = document.getElementById('score');
+let catchInterval = null;
+let catchScore = 0;
+document.getElementById('startCatch').addEventListener('click', ()=>{
+  if(catchArea.style.display === 'block'){ stopCatchGame(); return; }
+  startCatchGame();
+});
+function startCatchGame(){
+  catchScore = 0; scoreEl.textContent = catchScore;
+  catchArea.style.display = 'block';
+  catchArea.setAttribute('aria-hidden','false');
+  document.getElementById('startCatch').textContent = 'Parar juego: atrapa corazones';
+  // spawn hearts periodically
+  catchInterval = setInterval(()=> spawnFallingHeart(), 700);
+  // stop after 22s
+  setTimeout(()=> stopCatchGame(), 22000);
+}
+function stopCatchGame(){
+  clearInterval(catchInterval);
+  catchInterval = null;
+  catchArea.style.display = 'none';
+  document.getElementById('startCatch').textContent = 'Jugar: atrapa corazones';
+  spawnConfetti(24);
+}
+function spawnFallingHeart(){
+  const el = document.createElement('div');
+  el.className = 'falling';
+  el.textContent = '❤';
+  const left = 6 + Math.random()*88;
+  el.style.left = left + '%';
+  el.style.top = '-8px';
+  el.style.fontSize = (20 + Math.random()*28) + 'px';
+  catchArea.appendChild(el);
+  // movement
+  const duration = 3000 + Math.random()*1600;
+  el.animate([{transform:'translateY(0)'},{transform:`translateY(${catchArea.clientHeight+40}px)`}],{duration:duration,iterations:1,easing:'linear'});
+  // remove after time
+  setTimeout(()=> { try{ el.remove(); } catch(e){} }, duration+60);
+  // click/tap handler
+  el.addEventListener('click', ()=>{
+    catchScore += 1;
+    scoreEl.textContent = catchScore;
+    try{ document.getElementById('soundCorrect').play(); }catch(e){}
+    spawnConfetti(12);
+    el.remove();
+  }, {passive:true});
+}
+
+/* ===== Mini-game 2: quick trivia (short fast questions) ===== */
+const quickArea = document.getElementById('quickArea');
+const soundCorrect = document.getElementById('soundCorrect');
+const soundWrong = document.getElementById('soundWrong');
+const quickQs = [
+  {q:"¿Cuál es la capital de Francia?", a:"París", opts:["París","Londres","Berlín"]},
+  {q:"¿Planeta más grande?", a:"Júpiter", opts:["Marte","Júpiter","Venus"]},
+  {q:"¿Color que mezclando azul+amarillo produce?", a:"Verde", opts:["Verde","Rojo","Negro"]},
+  {q:"¿Lenguaje de páginas web?", a:"HTML", opts:["HTML","Python","C++"]},
+];
+document.getElementById('startQuick').addEventListener('click', ()=> {
+  if(quickArea.style.display==='block'){ quickArea.style.display='none'; document.getElementById('startQuick').textContent='Reto rápido (trivia)'; return; }
+  document.getElementById('startQuick').textContent='Cerrar Reto rápido';
+  quickArea.style.display='block';
+  renderQuick();
+});
+function renderQuick(){
+  quickArea.innerHTML = '';
+  quickQs.forEach((t, i) => {
+    const block = document.createElement('div');
+    block.style.marginBottom='8px';
+    const p = document.createElement('p'); p.textContent = `${i+1}. ${t.q}`; p.style.color='var(--muted)';
+    block.appendChild(p);
+    t.opts.forEach(opt=>{
+      const b = document.createElement('button'); b.textContent = opt; b.className='qopt';
+      b.onclick = ()=> {
+        if(opt===t.a){ b.classList.add('correct'); try{ soundCorrect.play(); }catch(e){}; spawnConfetti(10); }
+        else { b.classList.add('wrong'); b.textContent = opt + ' 😜'; try{ soundWrong.play(); }catch(e){}; }
+      };
+      block.appendChild(b);
+    });
+    quickArea.appendChild(block);
+  });
+}
+
+/* ===== Quiz 30 questions (opens with flower) ===== */
+const flower = document.getElementById('flower');
+const quizSection = document.getElementById('quizSection');
+const coupon = document.getElementById('coupon');
+const questions = [
+  {q:"Capital de Francia?",a:"París",w:["Madrid","Berlín","Roma"]},
+  {q:"Número pi aproximado?",a:"3.14",w:["3.15","2.71","1.62"]},
+  {q:"Capital de España?",a:"Madrid",w:["Barcelona","Valencia","Sevilla"]},
+  {q:"Año llegada hombre a la Luna?",a:"1969",w:["1965","1972","1970"]},
+  {q:"Inventor de la bombilla (comúnmente)",a:"Edison",w:["Tesla","Newton","Bell"]},
+  {q:"País originario del sushi?",a:"Japón",w:["China","Corea","Tailandia"]},
+  {q:"Capital de Argentina?",a:"Buenos Aires",w:["Córdoba","Rosario","Mendoza"]},
+  {q:"Gas que respiramos (mayormente)?",a:"Oxígeno",w:["Carbono","Hidrógeno","Nitrógeno"]},
+  {q:"Año inicio Segunda Guerra Mundial?",a:"1939",w:["1945","1914","1920"]},
+  {q:"Deporte con balón ovalado?",a:"Rugby",w:["Fútbol","Baloncesto","Vóleibol"]},
+  {q:"Capital de Italia?",a:"Roma",w:["Venecia","Milán","Turín"]},
+  {q:"¿Cuál es el continente más frío?",a:"Antártida",w:["África","Asia","Europa"]},
+  {q:"País famoso por sus relojes y queso?",a:"Suiza",w:["Francia","Italia","Bélgica"]},
+  {q:"Idioma oficial de Brasil?",a:"Portugués",w:["Español","Inglés","Francés"]},
+  {q:"Animal terrestre más rápido?",a:"Guepardo",w:["León","Tigre","Pantera"]},
+  {q:"Planeta conocido como el planeta rojo?",a:"Marte",w:["Júpiter","Saturno","Venus"]},
+  {q:"Capital de Canadá?",a:"Ottawa",w:["Toronto","Montreal","Vancouver"]},
+  {q:"Color del cielo en día despejado?",a:"Azul",w:["Rojo","Verde","Amarillo"]},
+  {q:"País donde ver auroras boreales?",a:"Noruega",w:["México","España","Perú"]},
+  {q:"Número de continentes habitados (comúnmente)?",a:"7",w:["6","5","8"]},
+  {q:"¿Cuál es la unidad básica de la vida?",a:"Célula",w:["Átomo","Molécula","Tejido"]},
+  {q:"¿Qué instrumento mide la temperatura?",a:"Termómetro",w:["Barómetro","Higrómetro","Telescopio"]},
+  {q:"¿En qué año se inventó Internet (ARPANET inicio)?",a:"1969",w:["1958","1975","1989"]},
+  {q:"¿Qué vitamina se obtiene con la luz solar?",a:"Vitamina D",w:["Vitamina C","Vitamina B12","Vitamina A"]},
+  {q:"¿Cuál es la capital de Australia?",a:"Canberra",w:["Sydney","Melbourne","Perth"]},
+  {q:"¿Cuál es el metal que flota en agua a temperatura ambiente?",a:"Ninguno",w:["Mercurio","Plomo","Aluminio"]},
+  {q:"¿Quién pintó la Mona Lisa?",a:"Leonardo da Vinci",w:["Picasso","Van Gogh","Rembrandt"]},
+  {q:"¿Cuál es la velocidad aproximada de la luz (km/s)?",a:"300000",w:["150000","3000","30000"]},
+  {q:"¿Cuál es la lengua materna más hablada?",a:"Chino mandarín",w:["Inglés","Español","Hindi"]},
+  {q:"¿Cuál es el océano más grande?",a:"Pacífico",w:["Atlántico","Índico","Ártico"]}
+];
+function renderQuiz(){
+  quizSection.innerHTML = '';
+  coupon.style.display = 'none';
+  questions.forEach((t,i)=>{
+    const block = document.createElement('div'); block.className='qblock';
+    const p = document.createElement('p'); p.textContent = `${i+1}. ${t.q}`; block.appendChild(p);
+    const opts = [t.a, ...t.w].sort(()=>0.5-Math.random());
+    opts.forEach(opt=>{
+      const b = document.createElement('button'); b.className='qopt'; b.textContent = opt;
+      b.onclick = ()=>{
+        if(b.classList.contains('correct') || b.classList.contains('wrong')) return; // prevent re-answer
+        if(opt === t.a){
+          b.classList.add('correct'); try{ soundCorrect.play(); }catch(e){}; spawnConfetti(10);
+        } else {
+          b.classList.add('wrong'); b.textContent = opt + ' 😜'; try{ soundWrong.play(); }catch(e){}; 
+        }
+        checkQuizComplete();
+      };
+      block.appendChild(b);
+    });
+    quizSection.appendChild(block);
+  });
+}
+function checkQuizComplete(){
+  const opts = quizSection.querySelectorAll('.qopt');
+  // For simplicity: question considered answered if any button in that qblock has class correct or wrong.
+  const blocks = quizSection.querySelectorAll('.qblock');
+  let allAnswered = true;
+  let allCorrect = true;
+  blocks.forEach(b=>{
+    const any = b.querySelectorAll('.qopt.correct, .qopt.wrong');
+    if(any.length === 0) allAnswered = false;
+    const wrong = b.querySelectorAll('.qopt.wrong');
+    if(wrong.length > 0) allCorrect = false;
+  });
+  if(allAnswered && allCorrect){
+    coupon.style.display = 'block';
+    spawnConfetti(30);
+    try{ soundCorrect.play(); }catch(e){}
+  }
+}
+
+flower.addEventListener('click', ()=>{
+  if(quizSection.style.display==='block'){ quizSection.style.display='none'; return; }
+  quizSection.style.display='block';
+  renderQuiz();
+});
+
+/* ===== Utility: toggle open/close of quiz & letter via buttons already provided ===== */
+document.getElementById('openLetterBtn').addEventListener('click', ()=> { letter.style.display='block'; });
+/* quick press heart to clear message option: double tap clears */
+let lastTap = 0;
+document.getElementById('heart').addEventListener('dblclick', ()=> { heartMessage.textContent = ''; });
+
+/* ===== small accessibility & mobile touches: reset inactivity on touch ===== */
+['touchstart','mousemove','keydown','scroll','click'].forEach(ev=>document.addEventListener(ev, ()=>{ idle=0; }));
+
+/* Done */
+</script>
+</body>
+</html>
